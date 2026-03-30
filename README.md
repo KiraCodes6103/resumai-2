@@ -20,6 +20,14 @@ simply don't do it.
 
 ## How ResuMAI Works
 
+
+
+  <summary>Watch demo</summary>
+
+  [![Demo](https://img.youtube.com/vi/VUg1CMY8gVo/0.jpg)](https://www.youtube.com/watch?v=VUg1CMY8gVo)
+
+
+
 ### 1. Build your profile once (5 minutes)
 Write about your experience, projects, and skills in plain English. No special formatting
 required — just describe what you've done. Our AI extracts and structures everything.
@@ -142,4 +150,3 @@ then regenerate.
 
 No credit card required. 5 resume generations included in the free tier.
 
-[Get started →](https://resumai.app/sign-up)
