@@ -1,0 +1,268 @@
+// ResuMAI - Database Schema
+// PostgreSQL via Neon (free tier)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Auth ────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  email         String   @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Billing / credits
+  plan          Plan     @default(FREE)
+  credits       Int      @default(5)  // free tier: 5 resume generations
+  stripeCustomerId String?
+
+  // Relations
+  profile       Profile?
+  jobApplications JobApplication[]
+  resumes       Resume[]
+  usageLogs     UsageLog[]
+
+  @@index([clerkId])
+}
+
+enum Plan {
+  FREE
+  PRO
+  TEAM
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Raw inputs (what user types)
+  rawExperience    String?  @db.Text  // plain text blob
+  rawProjects      String?  @db.Text
+  rawSkills        String?  @db.Text
+  rawEducation     String?  @db.Text
+  rawSummary       String?  @db.Text
+
+  // Structured (AI-extracted JSON)
+  structuredData   Json?    // { experiences: [...], projects: [...], skills: [...] }
+
+  // Metadata
+  lastProcessedAt  DateTime?
+  completionScore  Int      @default(0)  // 0-100
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  experiences  Experience[]
+  projects     Project[]
+  skills       Skill[]
+  education    Education[]
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  company     String
+  title       String
+  startDate   String   // "Jan 2022"
+  endDate     String?  // null = current
+  location    String?
+  description String   @db.Text
+  bullets     String[] // AI-extracted impact bullets
+  technologies String[]
+  impact      String?  // AI-extracted: "Reduced latency by 40%"
+
+  @@index([profileId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String   @db.Text
+  url         String?
+  githubUrl   String?
+  techStack   String[]
+  bullets     String[]
+  impact      String?
+
+  @@index([profileId])
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  name        String
+  category    String   // "Programming Languages", "Frameworks", "Tools", etc.
+  level       SkillLevel @default(INTERMEDIATE)
+  yearsExp    Float?
+
+  @@index([profileId])
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+model Education {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  institution String
+  degree      String
+  field       String?
+  startYear   String?
+  endYear     String?
+  gpa         String?
+  honors      String[]
+}
+
+// ─── Job Applications ─────────────────────────────────────────────────────────
+
+model JobApplication {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Job info
+  jobUrl      String?
+  rawJD       String   @db.Text  // raw job description text
+  parsedJD    Json?    // AI-structured: { title, company, requirements, keywords, responsibilities }
+
+  company     String?
+  jobTitle    String?
+  jobLevel    String?  // "Senior", "Mid", "Junior"
+  location    String?
+  remote      Boolean  @default(false)
+
+  status      ApplicationStatus @default(DRAFT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  resumes     Resume[]
+
+  @@index([userId])
+}
+
+enum ApplicationStatus {
+  DRAFT
+  GENERATING
+  READY
+  APPLIED
+  INTERVIEWING
+  REJECTED
+  OFFER
+}
+
+// ─── Resumes ──────────────────────────────────────────────────────────────────
+
+model Resume {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplicationId String
+  jobApplication  JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  variantNumber   Int      // 1-5
+  title           String   // "Technical Focus", "Leadership Focus", etc.
+
+  // Content (structured JSON for rendering)
+  content         Json     // full resume data structure
+
+  // AI Scores
+  atsScore        Int?     // 0-100
+  relevanceScore  Int?
+  clarityScore    Int?
+  impactScore     Int?
+  overallScore    Int?
+  scoreBreakdown  Json?    // detailed explanation per score
+
+  // Iteration tracking
+  iterationCount  Int      @default(0)
+  generationLog   Json?    // array of refinement steps
+
+  // File outputs
+  pdfUrl          String?
+  docxUrl         String?
+
+  status          ResumeStatus @default(GENERATING)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([jobApplicationId])
+}
+
+enum ResumeStatus {
+  GENERATING
+  EVALUATING
+  REFINING
+  COMPLETE
+  FAILED
+}
+
+// ─── Usage & Billing ──────────────────────────────────────────────────────────
+
+model UsageLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action    String   // "resume_generation", "jd_parse", "profile_extract"
+  tokens    Int      @default(0)
+  cost      Float    @default(0)
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── Queue Jobs ───────────────────────────────────────────────────────────────
+
+model QueueJob {
+  id          String    @id @default(cuid())
+  type        String    // "PARSE_JD", "GENERATE_RESUMES", "PROCESS_PROFILE"
+  payload     Json
+  status      QueueStatus @default(PENDING)
+  attempts    Int       @default(0)
+  error       String?
+  result      Json?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@index([type])
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}

@@ -1,0 +1,123 @@
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 99%;
+    --foreground: 222 20% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 8%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 20% 20%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 20% 20%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.625rem;
+
+    /* Custom tokens */
+    --surface-0: 0 0% 99%;
+    --surface-1: 220 20% 97%;
+    --surface-2: 220 16% 94%;
+
+    --score-excellent: 142 71% 45%;
+    --score-good: 199 89% 48%;
+    --score-average: 38 92% 50%;
+    --score-poor: 0 84% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "DM Sans", system-ui, sans-serif;
+  }
+  code, pre, kbd {
+    font-family: "DM Mono", monospace;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 99px;
+}
+
+/* Score color utilities */
+.score-excellent { color: hsl(var(--score-excellent)); }
+.score-good { color: hsl(var(--score-good)); }
+.score-average { color: hsl(var(--score-average)); }
+.score-poor { color: hsl(var(--score-poor)); }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(262, 83%, 58%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Animated gradient background */
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse 80% 80% at 20% 20%, rgba(66, 133, 244, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 60% at 80% 80%, rgba(138, 43, 226, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 50% at 50% 0%, rgba(66, 133, 244, 0.03) 0%, transparent 60%),
+    hsl(var(--background));
+}
+
+/* Pulse animation for loading states */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Score ring animation */
+@keyframes score-fill {
+  from { stroke-dasharray: 0 100; }
+}
+
+/* Stagger animation helper */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
